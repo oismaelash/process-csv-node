@@ -16,7 +16,7 @@ async function processCSV(csvInput, tempOutput) {
         fs.createReadStream(csvInput)
             .pipe(csv())
             .on('headers', (headers) => {
-                const headersExtra = 'documentType,documentError,vlPrestaCalculated,vlPrestaCalculatedError'
+                const headersExtra = 'documentType;documentError;vlPrestaCalculated;vlPrestaCalculatedError'
                 const headerFinal = `${headers.join(';')};${headersExtra}\n`
                 writeStream.write(`${headerFinal}`);
             })
