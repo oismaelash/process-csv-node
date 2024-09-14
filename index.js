@@ -1,10 +1,13 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const { promisify } = require('util');
-const fsPromises = fs.promises;
+const { formatBRL, validCPFOrCNPJ, valuePresta } = require('./utils');
 
+
+const fsPromises = fs.promises;
 const mkdtemp = promisify(fs.mkdtemp);
 const unlink = promisify(fs.unlink);
+const rm = promisify(fs.rm);
 
 async function processCSV(csvInput, tempOutput) {
     return new Promise((resolve, reject) => {
@@ -13,14 +16,30 @@ async function processCSV(csvInput, tempOutput) {
         fs.createReadStream(csvInput)
             .pipe(csv())
             .on('headers', (headers) => {
-                const headersExtra = 'documentType,documentError,vlPresta,vlPrestaError'
-                const headerFinal = `${headers.join(',')},${headersExtra}\n`
+                const headersExtra = 'documentType,documentError,vlPrestaCalculated,vlPrestaCalculatedError'
+                const headerFinal = `${headers.join(';')};${headersExtra}\n`
                 writeStream.write(`${headerFinal}`);
             })
             .on('data', (row) => {
-                const dataExtra = `{documentType},{documentError},{vlPresta},{vlPrestaError}`
-                const line = `${row},${dataExtra}`
-                writeStream.write(line);
+
+                const documentData = validCPFOrCNPJ(row.nrCpfCnpj)
+                const valuePrestaData = valuePresta(row.vlTotal, row.qtPrestacoes, row.vlPresta)
+                
+                row.vlTotal = formatBRL(row.vlTotal)
+                row.vlPresta = formatBRL(row.vlPresta)
+                row.vlMora = formatBRL(row.vlMora)
+                row.vlMulta = formatBRL(row.vlMulta)
+                row.vlOutAcr = formatBRL(row.vlOutAcr)
+                row.vlDescon = formatBRL(row.vlDescon)
+                row.vlAtual = formatBRL(row.vlAtual)
+
+                row['documentType'] = documentData.type
+                row['documentError'] = documentData.valid
+                row['vlPrestaCalculated'] = formatBRL(valuePrestaData.value)
+                row['vlPrestaCalculatedError'] = !valuePrestaData.valid
+
+                const csvRow = Object.values(row).map(value => `${value}`).join(';') + '\n';
+                writeStream.write(csvRow);
             })
             .on('end', () => {
                 writeStream.end();
@@ -43,7 +62,7 @@ async function combineTempFiles(tempFiles, finalOutput) {
             readStream.on('end', resolve);
             readStream.on('error', reject);
         });
-        await unlink(file); // Remove o arquivo temporário após a combinação
+        await unlink(file);
     }
 
     writeStream.end();
@@ -51,10 +70,20 @@ async function combineTempFiles(tempFiles, finalOutput) {
 
 async function processAllCSVsInFolder(folderPath) {
     try {
+        console.time('analyzeCSV')
+       
+        const tempDir = await mkdtemp(folderPath + '/csv-');
+        const finalOutput = folderPath + '/final_output.csv';
+
+        const finalOutputExist = fs.existsSync(finalOutput);
+
+        if(finalOutputExist){
+            await rm(finalOutput, { recursive: true, force: true });
+        }
+
         const files = await fsPromises.readdir(folderPath);
         const csvFiles = files.filter(file => file.endsWith('.csv'));
 
-        const tempDir = await mkdtemp(folderPath + '/csv-');
         const tempFiles = await Promise.all(
             csvFiles.map(async (file) => {
                 const inputFilePath = folderPath + '/' + file;
@@ -64,14 +93,14 @@ async function processAllCSVsInFolder(folderPath) {
             })
         );
 
-        const finalOutput = folderPath + '/final_output.csv';
         await combineTempFiles(tempFiles, finalOutput);
+        await rm(tempDir, { recursive: true, force: true });
 
-        console.log('Todos os arquivos CSV processados e combinados com sucesso.');
+        console.timeEnd('analyzeCSV')
+        console.log('All csv files processed and combined with success');
     } catch (err) {
         console.error('Erro ao processar arquivos:', err);
     }
 }
 
-await processAllCSVsInFolder('data');
-
+processAllCSVsInFolder('test');

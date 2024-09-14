@@ -1,4 +1,4 @@
-function validaCPF(cpf) {
+function validCPF(cpf) {
     cpf = cpf.replace(/[^\d]+/g, ''); // Remove caracteres não numéricos
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false; // Verifica se tem 11 dígitos e se todos são iguais
 
@@ -17,7 +17,7 @@ function validaCPF(cpf) {
     return true;
 }
 
-function validaCNPJ(cnpj) {
+function validCNPJ(cnpj) {
     cnpj = cnpj.replace(/[^\d]+/g, ''); // Remove caracteres não numéricos
     if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false; // Verifica se tem 14 dígitos e se todos são iguais
 
@@ -51,43 +51,46 @@ function validaCNPJ(cnpj) {
     return true;
 }
 
-function validaCPFouCNPJ(valor) {
-    valor = valor.replace(/[^\d]+/g, ''); // Remove caracteres não numéricos
+function validCPFOrCNPJ(value) {
+    value = value.replace(/[^\d]+/g, '');
 
-    let resultado = {
-        tipo: '',
-        valido: false
+    let result = {
+        type: 'unknow',
+        valid: false
     };
 
-    if (valor.length === 11) {
-        resultado.tipo = 'CPF';
-        resultado.valido = validaCPF(valor);
-    } else if (valor.length === 14) {
-        resultado.tipo = 'CNPJ';
-        resultado.valido = validaCNPJ(valor);
+    if (value.length === 11) {
+        result.type = 'cpf';
+        result.valid = validCPF(value);
+    } else if (value.length === 14) {
+        result.type = 'cnpj';
+        result.valid = validCNPJ(value);
     }
 
-    return resultado;
+    return result;
 }
 
 const formatBRL = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
-function valuePrestaIsOk(vlTotal, qtPrestacoes, vlPrestaCsv) {
-    const vlTotal = parseFloat(vlTotal);
-    const qtPrestacoes = parseInt(qtPrestacoes, 2);
+function valuePresta(vlTotalCsv, qtPrestacoesCsv, vlPrestaCsv) {
+    const vlTotal = parseFloat(vlTotalCsv, 2);
+    const qtPrestacoes = parseInt(qtPrestacoesCsv);
+    const vlPresta = parseFloat(vlPrestaCsv, 2);
 
-    // Calcular o valor da prestação esperado
-    const expectedVlPresta = parseInt(vlTotal / qtPrestacoes, 2);
+    const expectedVlPresta = parseFloat((vlTotal / qtPrestacoes), 2);
 
-    // Verificar se o valor calculado é igual ao valor da prestação fornecido
-    const isCalculationConsistent = expectedVlPresta === vlPrestaCsv
-    return isCalculationConsistent
+    const isCalculationConsistent = expectedVlPresta === vlPresta
+
+    return {
+        value: expectedVlPresta,
+        valid: isCalculationConsistent
+    }
 }
 
 module.exports = {
     formatBRL,
-    valuePrestaIsOk,
-    validaCPFouCNPJ
+    valuePresta,
+    validCPFOrCNPJ
 }
