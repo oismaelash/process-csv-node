@@ -32,6 +32,7 @@ async function processCSV(csvInput, tempOutput) {
                 row.vlOutAcr = formatBRL(row.vlOutAcr)
                 row.vlDescon = formatBRL(row.vlDescon)
                 row.vlAtual = formatBRL(row.vlAtual)
+                row.vlIof = formatBRL(row.vlIof)
 
                 row['documentType'] = documentData.type
                 row['documentError'] = documentData.valid
