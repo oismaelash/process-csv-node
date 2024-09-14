@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const { promisify } = require('util');
-const { formatBRL, validCPFOrCNPJ, valuePresta } = require('./utils');
+const { showCurrentBRL, validCPFOrCNPJ, valuePresta } = require('./utils');
 
 
 const fsPromises = fs.promises;
@@ -25,18 +25,18 @@ async function processCSV(csvInput, tempOutput) {
                 const documentData = validCPFOrCNPJ(row.nrCpfCnpj)
                 const valuePrestaData = valuePresta(row.vlTotal, row.qtPrestacoes, row.vlPresta)
                 
-                row.vlTotal = formatBRL(row.vlTotal)
-                row.vlPresta = formatBRL(row.vlPresta)
-                row.vlMora = formatBRL(row.vlMora)
-                row.vlMulta = formatBRL(row.vlMulta)
-                row.vlOutAcr = formatBRL(row.vlOutAcr)
-                row.vlDescon = formatBRL(row.vlDescon)
-                row.vlAtual = formatBRL(row.vlAtual)
-                row.vlIof = formatBRL(row.vlIof)
+                row.vlTotal = showCurrentBRL(row.vlTotal)
+                row.vlPresta = showCurrentBRL(row.vlPresta)
+                row.vlMora = showCurrentBRL(row.vlMora)
+                row.vlMulta = showCurrentBRL(row.vlMulta)
+                row.vlOutAcr = showCurrentBRL(row.vlOutAcr)
+                row.vlDescon = showCurrentBRL(row.vlDescon)
+                row.vlAtual = showCurrentBRL(row.vlAtual)
+                row.vlIof = showCurrentBRL(row.vlIof)
 
                 row['documentType'] = documentData.type
                 row['documentError'] = documentData.valid
-                row['vlPrestaCalculated'] = formatBRL(valuePrestaData.value)
+                row['vlPrestaCalculated'] = showCurrentBRL(valuePrestaData.value)
                 row['vlPrestaCalculatedError'] = !valuePrestaData.valid
 
                 const csvRow = Object.values(row).map(value => `${value}`).join(';') + '\n';
@@ -100,8 +100,10 @@ async function processAllCSVsInFolder(folderPath) {
         console.timeEnd('analyzeCSV')
         console.log('All csv files processed and combined with success');
     } catch (err) {
-        console.error('Erro ao processar arquivos:', err);
+        console.error('Error on process files:', err);
     }
 }
 
-processAllCSVsInFolder('test');
+processAllCSVsInFolder('test'); // Multiple CSV
+
+// processCSV('testcopy/data.csv', 'testcopy/output.csv') // Singles CSV
