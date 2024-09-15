@@ -1,3 +1,8 @@
+const fs = require('fs');
+const { promisify } = require('util');
+
+const unlink = promisify(fs.unlink);
+
 function validCPF(cpf) {
     cpf = cpf.replace(/[^\d]+/g, '');
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
@@ -71,16 +76,20 @@ function validCPFOrCNPJ(value) {
 }
 
 const showCurrentBRL = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    return new Intl.NumberFormat('pt-BR', 
+        { 
+            style: 'currency', 
+            currency: 'BRL' 
+        })
+        .format(parseFloat(value, 2));
 };
 
 function valuePresta(vlTotalCsv, qtPrestaCsv, vlPrestaCsv) {
-    const vlTotal = parseFloat(vlTotalCsv, 2);
     const qtPresta = parseInt(qtPrestaCsv);
+    const vlTotal = parseFloat(vlTotalCsv, 2);
     const vlPresta = parseFloat(vlPrestaCsv, 2);
 
     const expectedVlPresta = parseFloat((vlTotal / qtPresta), 2);
-
     const isVlPrestaValid = expectedVlPresta === vlPresta
 
     return {
@@ -89,8 +98,25 @@ function valuePresta(vlTotalCsv, qtPrestaCsv, vlPrestaCsv) {
     }
 }
 
+async function combineFiles(tempFiles, finalOutput) {
+    const writeStream = fs.createWriteStream(finalOutput);
+
+    for (const file of tempFiles) {
+        const readStream = fs.createReadStream(file);
+        await new Promise((resolve, reject) => {
+            readStream.pipe(writeStream, { end: false });
+            readStream.on('end', resolve);
+            readStream.on('error', reject);
+        });
+        await unlink(file);
+    }
+
+    writeStream.end();
+}
+
 module.exports = {
     showCurrentBRL,
     valuePresta,
-    validCPFOrCNPJ
+    validCPFOrCNPJ,
+    combineFiles
 }

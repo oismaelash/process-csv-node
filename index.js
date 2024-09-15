@@ -1,12 +1,10 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const { promisify } = require('util');
-const { showCurrentBRL, validCPFOrCNPJ, valuePresta } = require('./utils');
-
+const { showCurrentBRL, validCPFOrCNPJ, valuePresta, combineFiles } = require('./utils');
 
 const fsPromises = fs.promises;
 const mkdtemp = promisify(fs.mkdtemp);
-const unlink = promisify(fs.unlink);
 const rm = promisify(fs.rm);
 
 async function processCSV(csvInput, tempOutput) {
@@ -19,6 +17,7 @@ async function processCSV(csvInput, tempOutput) {
                 const headersExtra = 'documentType;documentError;vlPrestaCalculated;vlPrestaCalculatedError'
                 const headerFinal = `${headers.join(';')};${headersExtra}\n`
                 writeStream.write(`${headerFinal}`);
+                fs.appendFile()
             })
             .on('data', (row) => {
 
@@ -53,22 +52,6 @@ async function processCSV(csvInput, tempOutput) {
     });
 }
 
-async function combineTempFiles(tempFiles, finalOutput) {
-    const writeStream = fs.createWriteStream(finalOutput);
-
-    for (const file of tempFiles) {
-        const readStream = fs.createReadStream(file);
-        await new Promise((resolve, reject) => {
-            readStream.pipe(writeStream, { end: false });
-            readStream.on('end', resolve);
-            readStream.on('error', reject);
-        });
-        await unlink(file);
-    }
-
-    writeStream.end();
-}
-
 async function processAllCSVsInFolder(folderPath) {
     try {
         console.time('analyzeCSV')
@@ -94,7 +77,7 @@ async function processAllCSVsInFolder(folderPath) {
             })
         );
 
-        await combineTempFiles(tempFiles, finalOutput);
+        await combineFiles(tempFiles, finalOutput);
         await rm(tempDir, { recursive: true, force: true });
 
         console.timeEnd('analyzeCSV')
@@ -104,6 +87,6 @@ async function processAllCSVsInFolder(folderPath) {
     }
 }
 
-processAllCSVsInFolder('test'); // Multiple CSV
+// processAllCSVsInFolder('data'); // Multiple CSV
 
-// processCSV('testcopy/data.csv', 'testcopy/output.csv') // Singles CSV
+processCSV('single/output.csv', 'single/output_single.csv') // Singles CSV
