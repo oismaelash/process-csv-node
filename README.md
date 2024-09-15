@@ -1,5 +1,7 @@
 # process-csv-node
 
+- https://youtu.be/YoKt_lNlQDg
+
 ## references
 
 - https://www.npmjs.com/package/csv-parser
