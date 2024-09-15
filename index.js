@@ -17,7 +17,6 @@ async function processCSV(csvInput, tempOutput) {
                 const headersExtra = 'documentType;documentError;vlPrestaCalculated;vlPrestaCalculatedError'
                 const headerFinal = `${headers.join(';')};${headersExtra}\n`
                 writeStream.write(`${headerFinal}`);
-                fs.appendFile()
             })
             .on('data', (row) => {
 
