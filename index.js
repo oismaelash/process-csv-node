@@ -30,7 +30,7 @@ async function processCSV(csvInput, tempOutput) {
                 row.vlOutAcr = showCurrentBRL(row.vlOutAcr)
                 row.vlDescon = showCurrentBRL(row.vlDescon)
                 row.vlAtual = showCurrentBRL(row.vlAtual)
-                row.vlIof = showCurrentBRL(row.vlIof)
+                row.vlIof = showCurrentBRL(row.vlIof) // R$ 10.300,93
 
                 row['documentType'] = documentData.type
                 row['documentError'] = documentData.valid
@@ -46,7 +46,7 @@ async function processCSV(csvInput, tempOutput) {
             })
             .on('error', (err) => {
                 writeStream.end();
-                reject(`Erro ao ler o CSV: ${err}`);
+                reject(`Error on read the file: ${err}`);
             });
     });
 }
